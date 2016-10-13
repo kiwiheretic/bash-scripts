@@ -219,6 +219,8 @@ server {
     listen 80;
     listen 443 ssl;
     server_name www.$domain;
+    ssl_certificate $certpath/fullchain.pem;
+    ssl_certificate_key $certpath/privkey.pem;
     return 301 \$scheme://$domain\$request_uri;
 }
 
@@ -243,7 +245,7 @@ server {
     }
 
     location ~ \\.php$ {
-        fastcgi_pass   unix:/var/run/php5-fpm.sock;
+        fastcgi_pass   unix:/var/run/php/php7.0-fpm.sock;
         fastcgi_index  index.php;
         fastcgi_param  SCRIPT_FILENAME  \$document_root\$fastcgi_script_name;
         include        fastcgi_params;
