@@ -3,6 +3,7 @@
 To install:
 
 ```
+$ sudo apt-get install letsencrypt
 $ sudo apt-get install git  
 $ git clone https://github.com/kiwiheretic/bash-scripts.git
 $ sudo cp -v bash_scripts/*.conf  /etc/nginx
