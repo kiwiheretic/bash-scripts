@@ -47,10 +47,11 @@ getcertlive &lt;domain&gt;
 
 To add SSL certificate to your site  
 
-vhost.sh ssl enable &lt;domain&gt;
+vhost.sh ssl enable &lt;domain&gt;  
+
 To remove SSL certificate to your site (but doesn't destroy certificate)  
 
-vhost.sh ssl disable &lt;domain&gt;
+vhost.sh ssl disable &lt;domain&gt;  
 Certificates are obtained from letsencrypt.org.  
 
 Only a small number (around 5) of live certificates can be obtained a week.  So best to test with test certificates until ready.  Test certificates will not
