@@ -6,8 +6,14 @@ if [ -z "$archive" -o -z "$domain" ]; then
     echo "usage: unpacktar <archive> <domain>"
     exit
 fi
-rm -fr ~/$domain/*
-( cd ~/$domain && tar -xvzf ~/${archive} --strip-components=1 && \
-chown -R www-data.www-data * && chmod -R g+rw * )
-chown www-data.www-data ~/$domain
-service php7.0-fpm restart
+if [ "$(ls -A ~/$domain)" ]; then
+    echo "The folder ~/$domain is not Empty"
+    exit 
+else
+    echo "$DIR is Empty"
+    ( cd ~/$domain && tar -xvzf ~/${archive} --strip-components=1 && \
+    chown -R www-data.www-data * && chmod -R g+rw * )
+    chown www-data.www-data ~/$domain
+    service php7.0-fpm restart
+fi
+#rm -fr ~/$domain/*
