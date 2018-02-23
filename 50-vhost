@@ -1,0 +1,3 @@
+
+# Allow group members to sudo run these commands
+%vhost ALL = NOPASSWD: /usr/local/bin/vhost.sh
