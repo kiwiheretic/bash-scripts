@@ -178,7 +178,7 @@ if test -z "$SUDO_USER"; then
     exit 1
 fi
 
-# check if user is in webadmin group
+# check if user is in vhost group
 if ! getent group vhost | grep -e "\b${SUDO_USER}\b" &> /dev/null ; then
     echo "user must be a member of vhost group to run this script"
     exit 1
@@ -283,9 +283,17 @@ elif [ "$1" = "list" ]; then
         else
             certname=""
         fi
+
+        # check if ssl enabled
+        if [ -f "/etc/nginx/sites-available/ssl/$dom.ssl.conf" ]; then
+            sslvhost="SSL Enabled"
+        else
+            sslvhost=""
+        fi
+
         # check if user owns the file
         if [[ ( -d /usr/share/nginx/html/$dom )  && ( "$( stat --format=%U /usr/share/nginx/html/$dom)" = "$SUDO_USER" ) ]]; then 
-            echo "$dom $certname"
+            echo "$dom $certname $sslvhost"
         fi
     done
 elif [ "$1" = "getcert" ]; then
