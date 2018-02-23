@@ -173,6 +173,26 @@ server {
 done
 } # end func_ssl
 
+if test -z "$SUDO_USER"; then
+    echo "Must be run with sudo"
+    exit 1
+fi
+
+# check if user is in webadmin group
+if ! getent group vhost | grep -e "\b${SUDO_USER}\b" &> /dev/null ; then
+    echo "user must be a member of vhost group to run this script"
+    exit 1
+fi 
+
+# Get original user home directory
+uhome=$(getent passwd splat | cut -d: -f6)
+
+if [ ! -d $uhome ]; then
+    echo "Home directory does not exist, script cannot run"
+    exit 1
+fi
+
+
 if [ "$1" = "create" ]; then
     if [ -z "$2" ]; then
         echo "No domain supplied"
@@ -186,11 +206,15 @@ if [ "$1" = "create" ]; then
     fi
     mkdir /usr/share/nginx/html/$domain/ 2>/dev/null || true
     func_test_page > /usr/share/nginx/html/$domain/splats-test-page.html 
-    ln -s /usr/share/nginx/html/$domain/ ~/$domain
+    ln -s /usr/share/nginx/html/$domain/ $uhome/$domain
+    chown www-data:www-data $uhome/$domain
+    chown --no-dereference ${SUDO_USER}.${SUDO_USER}  $uhome/$domain
+    setfacl --recursive -m u:${SUDO_USER}:rwx $uhome/$domain
+    setfacl --default -m u:${SUDO_USER}:rwx $uhome/$domain
     #func_redirect_conf $domain > /etc/nginx/sites-available/ssl/$domain.conf 
     func_nginx_conf $domain > /etc/nginx/sites-available/$domain.conf 
     ln -s /etc/nginx/sites-available/$domain.conf  /etc/nginx/sites-enabled/$domain.conf
-    sudo service nginx reload
+    service nginx reload
     echo "vhost $domain created and enabled"
 
 elif [ "$1" = "destroy" ]; then
@@ -207,7 +231,7 @@ elif [ "$1" = "destroy" ]; then
     rm /etc/nginx/sites-available/$2.conf
     rm -fr /usr/share/nginx/html/$2/
     rm ~/$2
-    sudo service nginx reload
+    service nginx reload
     echo "vhost $2 destroyed"
 elif [ "$1" = "disable" ]; then
     if [ -z "$2" ]; then
@@ -220,7 +244,7 @@ elif [ "$1" = "disable" ]; then
     fi
     echo "disabling domain $2"
     rm /etc/nginx/sites-enabled/$2.conf
-    sudo service nginx reload
+    service nginx reload
     
 elif [ "$1" = "enable" ]; then
     if [ -z "$2" ]; then
@@ -237,7 +261,7 @@ elif [ "$1" = "enable" ]; then
     fi
     echo "enabling domain $2"
     ln -s /etc/nginx/sites-available/$2.conf /etc/nginx/sites-enabled/$2.conf
-    sudo service nginx reload
+    service nginx reload
     
 elif [ "$1" = "list" ]; then
     for f in /etc/nginx/sites-available/*.conf
@@ -246,16 +270,67 @@ elif [ "$1" = "list" ]; then
         # the final slash from the variable f
         # the double ## is a greedy match
         f=${f##*/}
-        if [ -L "/etc/nginx/sites-enabled/$f" ]; then
-            enabled="(enabled)"
-        else
-            enabled=""
-        fi
+
         # The % means remove the trailing pattern .conf from the
         # variable f and is non-greedy
-        f=${f%.conf}
-        echo $f $enabled
+        dom=${f%.conf}
+        if [ -f "/etc/letsencrypt/live/$dom/cert.pem" ]; then
+            if openssl x509 -text -noout -in "/etc/letsencrypt/live/$dom/cert.pem" | grep "Issuer" | grep "Fake" &> /dev/null ; then
+                certname="(fake certificate)"
+            else
+                certname="(Live Certificate)"
+            fi
+        else
+            certname=""
+        fi
+        # check if user owns the file
+        if [[ ( -d /usr/share/nginx/html/$dom )  && ( "$( stat --format=%U /usr/share/nginx/html/$dom)" = "$SUDO_USER" ) ]]; then 
+            echo "$dom $certname"
+        fi
     done
+elif [ "$1" = "getcert" ]; then
+    shift
+    domain=$1
+    if [ -z "$domain" ]; then
+        echo "please supply a domain name"
+        exit 1
+    fi
+    email=$2
+    if [ -z "$email" ]; then
+        echo "please supply an email address"
+        exit 1
+    fi
+    if [ -f "/etc/letsencrypt/live/$domain/cert.pem" ]; then
+        echo "certificate already exists, revoke it first"
+        exit 1
+    fi
+
+    if [ "$3" == "live" ]; then
+        certtype=""
+    else
+        certtype="--test-cert"
+    fi
+    certbot certonly --webroot -w "/usr/share/nginx/html/$domain/" -d $domain  $certtype  --email $email --agree-tos -n
+    # Make sure nginx picks upthe new cerficate
+    service nginx reload
+elif [ "$1" = "revokecert" ]; then
+    shift
+    domain=$1
+    if [ -z "$domain" ]; then
+        echo "please supply a domain name"
+        exit 1
+    fi
+    if [ ! -f "/etc/letsencrypt/live/$domain/cert.pem" ]; then
+        echo "certificate does not exist"
+        exit 1
+    fi
+    if [ "$2" == "live" ]; then
+        certtype=""
+    else
+        certtype="--test-cert"
+    fi
+    certbot revoke  --cert-path "/etc/letsencrypt/live/$domain/cert.pem"  $certtype  -n
+    service nginx reload
 elif [ "$1" = "ssl" ]; then
     if [ -z "$3" ]; then
         echo "please supply a domain name"
@@ -269,24 +344,31 @@ elif [ "$1" = "ssl" ]; then
     fi
     if [ "$2" = "enable" ]; then
         domain=$3
-        # find newest certificate path for this certificate
-        certpath=$(find /etc/letsencrypt/live/ -type d -name "$domain*" -printf "%T@ %p\n" | sort -nr | cut -d\  -f2 | head -n1)
-        # remove preceding path info
-        if [ ! -z "$certpath" ]; then
- 
+        # check if certificate exists first
+        if [ ! -f "/etc/letsencrypt/live/$domain/cert.pem" ]; then
+            echo "certificate must exist first"
+            exit 1
+        else 
             func_ssl $domain > /etc/nginx/sites-available/ssl/$domain.ssl.conf 
+            func_redirect_conf $domain > /etc/nginx/sites-available/ssl/$domain.redirect.conf 
             echo "ssl vhost installed";
-            sudo service nginx reload
-        else
-            echo "run \"getcertlive <domain>\" or"
-            echo "\"getcerttest <domain>\" first"
+            service nginx reload
         fi
     elif [ "$2" = "disable" ]; then
         domain=$3
         rm /etc/nginx/sites-available/ssl/$domain.*.conf 
-        sudo service nginx reload
+        service nginx reload
         echo "removed ssl vhost for $domain"
     fi
 else
-    echo "unknown option: $1"
+    # usage
+    cat <<done
+usage:
+    sudo vhost.sh [create|destroy|enable|disable] <domain>
+    sudo vhost.sh ssl [enable|disable] <domain>
+    sudo vhost.sh list
+    sudo vhost.sh getcert <domain> <email> [live]
+    sudo vhost.sh revokecert <domain> [live]
+done
+
 fi 
