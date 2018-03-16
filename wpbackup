@@ -1,0 +1,90 @@
+#!/usr/bin/python
+
+""" 
+
+"""
+
+import sys
+import os
+import re
+import shutil
+import shlex
+import subprocess
+import zipfile
+
+
+
+WEBROOT = "/usr/share/nginx/html/"
+WEBDEST = "/usr/share/nginx/html/files.kiwiheretic.com/wp-backups"
+
+try:
+    domain = sys.argv[1]
+except IndexError:
+    print ("No domain supplied - please supply domain")
+    sys.exit(1)
+
+domain_path = os.path.join(WEBROOT, domain)
+if not os.path.isdir(domain_path):
+    print ("That domain {} does not exist".format(domain))
+    sys.exit(1)
+
+# look for wp-config.php file
+config_file = os.path.join(domain_path, "wp-config.php")
+if not os.path.isfile( config_file ):
+    print ("wp-config.php file could not be found")
+    sys.exit(1)
+
+file = open(config_file, "r")
+
+keys = ['DB_USER', 'DB_NAME', 'DB_PASSWORD', 'DB_HOST' ]
+db_credentials = {}
+for line in file:
+     match = re.search(r"define\('(\w+)',\s*'([^']+)'\)", line)
+     #match = re.search(r"define\('(\w+)',", line)
+     if match is not None:
+         k = match.group(1)
+         v = match.group(2)
+         if k in keys:
+             db_credentials[k] = v
+
+print(db_credentials)
+
+tmpdir = os.path.expanduser("~/tmp")
+if not os.path.isdir(tmpdir):
+    try:
+        os.mkdir(tmpdir)
+    except OSError:
+        print ("could not create temporary directory for backup files")
+        sys.exit(1)
+
+tmpdomain = os.path.join(tmpdir, domain)
+shutil.rmtree(tmpdomain,  ignore_errors=True)
+os.mkdir(tmpdomain)
+
+mysqldump_cmd = "mysqldump --complete-insert --lock-tables  --disable-keys  --host={} --user={} --password={} {}".format(db_credentials['DB_HOST'], db_credentials['DB_USER'], db_credentials['DB_PASSWORD'], db_credentials['DB_NAME'])
+myargs = shlex.split(mysqldump_cmd)
+f = open(os.path.join(tmpdomain,"db.sql"),"w")
+
+subprocess.call(myargs, stdout=f)
+f.close()
+print (myargs)
+zipfilename = os.path.join(tmpdomain, domain + ".zip")
+zipf = zipfile.ZipFile(zipfilename, 'w', zipfile.ZIP_DEFLATED)    
+prefix_count = len( filter(lambda x: x!='', WEBROOT.split(os.path.sep)))
+for root, dirs, files in os.walk(domain_path):
+    dom_prefix = os.path.sep.join(root.split(os.path.sep)[prefix_count+1:])
+    print dom_prefix
+    for file in files:
+        print ".", 
+        #
+        zipf.write(os.path.join(root, file), arcname=os.path.join(dom_prefix, file))
+    print
+zipf.write(os.path.join(tmpdomain, "db.sql"), arcname=os.path.join(domain, "db.sql"))
+zipf.close()
+
+destfile = os.path.join(WEBDEST, domain+".zip")
+shutil.move(zipfilename, destfile)
+
+print ("--------------------------------------------------------------------")
+print ("Enter the following url into your web browser to download your backup")
+print ("http://files.kiwiheretic.com/wp-backups/"+domain+".zip")
