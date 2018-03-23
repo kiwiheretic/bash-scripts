@@ -318,7 +318,7 @@ elif [ "$1" = "getcert" ]; then
     else
         certtype="--test-cert"
     fi
-    certbot certonly --webroot -w "/usr/share/nginx/html/$domain/" -d $domain  $certtype  --email $email --agree-tos -n
+    certbot certonly --webroot -w "/var/www/letsencrypt/" -d $domain  $certtype  --email $email --agree-tos -n
     # Make sure nginx picks upthe new cerficate
     service nginx reload
 elif [ "$1" = "revokecert" ]; then
