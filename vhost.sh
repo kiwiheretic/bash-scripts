@@ -15,6 +15,7 @@ include sites-available/ssl/${domain}.*.conf;
 
 server {
     listen       80;
+    listen       [::]:80 ipv6only=on;
     server_name  $domain;
 
     gzip on;
@@ -128,6 +129,7 @@ cat <<done
 # This file will be overwritten every time this script runs!!
 server {
     listen 80;
+    listen [::]:80 ipv6only=on;
     #listen 443 ssl;
     server_name $domain;
     ssl_certificate /etc/letsencrypt/live/$domain/fullchain.pem;
@@ -145,6 +147,7 @@ cat << done
 
 server {
     listen       443 ssl;
+    listen       [::]:443 ssl ipv6only=on;
     server_name  $domain;
     ssl_certificate /etc/letsencrypt/live/$domain/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/$domain/privkey.pem;
