@@ -10,12 +10,10 @@ func_nginx_conf () {
 domain=$1
 
 cat <<done
-include sites-available/ssl/${domain}.*.conf;
-
 
 server {
     listen       80;
-    listen       [::]:80 ipv6only=on;
+    listen       [::]:80; # ipv6only=on;
     server_name  $domain;
 
     gzip on;
@@ -129,12 +127,12 @@ cat <<done
 # This file will be overwritten every time this script runs!!
 server {
     listen 80;
-    listen [::]:80 ipv6only=on;
-    #listen 443 ssl;
+    # ipv6only causes major major restart issues
+    listen [::]:80; #  ipv6only=on;
     server_name $domain;
     ssl_certificate /etc/letsencrypt/live/$domain/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/$domain/privkey.pem;
-    return 301 https://$domain\$request_uri;
+    return 302 https://$domain\$request_uri;
 }
 
 done
@@ -147,7 +145,7 @@ cat << done
 
 server {
     listen       443 ssl;
-    listen       [::]:443 ssl ipv6only=on;
+    listen       [::]:443 ssl; # ipv6only=on;
     server_name  $domain;
     ssl_certificate /etc/letsencrypt/live/$domain/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/$domain/privkey.pem;
@@ -214,12 +212,38 @@ if [ "$1" = "create" ]; then
     chown --no-dereference ${SUDO_USER}.${SUDO_USER}  $uhome/$domain
     setfacl --recursive -m u:${SUDO_USER}:rwx $uhome/$domain
     setfacl --default -m u:${SUDO_USER}:rwx $uhome/$domain
-    #func_redirect_conf $domain > /etc/nginx/sites-available/ssl/$domain.conf 
     func_nginx_conf $domain > /etc/nginx/sites-available/$domain.conf 
     ln -s /etc/nginx/sites-available/$domain.conf  /etc/nginx/sites-enabled/$domain.conf
     service nginx reload
     echo "vhost $domain created and enabled"
 
+elif [ "$1" = "recreate" ]; then
+    if [ -z "$2" ]; then
+        echo "No domain supplied"
+        exit 1
+    fi
+    domain=$2
+    # check if linked domain already exists
+    if [ ! -L "$HOME/$domain" ]; then
+        echo "link to domain folder doesn't exists - no action taken"
+        exit 1
+    fi
+    mkdir /usr/share/nginx/html/$domain/ 2>/dev/null || true
+    func_test_page > /usr/share/nginx/html/$domain/splats-test-page.html 
+    if [ ! -L "$uhome/$domain" ] ; then
+        ln -s /usr/share/nginx/html/$domain/ $uhome/$domain
+    fi    
+    chown www-data:www-data $uhome/$domain
+    chown --no-dereference ${SUDO_USER}.${SUDO_USER}  $uhome/$domain
+    setfacl --recursive -m u:${SUDO_USER}:rwx $uhome/$domain
+    setfacl --default -m u:${SUDO_USER}:rwx $uhome/$domain
+    func_nginx_conf $domain > /etc/nginx/sites-available/$domain.conf 
+    if [ ! -L "/etc/nginx/sites-enabled/$domain.conf" ] ; then
+        ln -s /etc/nginx/sites-available/$domain.conf  /etc/nginx/sites-enabled/$domain.conf
+    fi    
+    service nginx reload
+    echo "vhost $domain recreated and enabled"
+    echo "If you had ssl installed you will need to reenable it"
 elif [ "$1" = "destroy" ]; then
     if [ -z "$2" ]; then
         echo "No domain supplied"
@@ -230,7 +254,6 @@ elif [ "$1" = "destroy" ]; then
         exit 1
     fi
     rm /etc/nginx/sites-enabled/$2.conf 2>/dev/null
-    rm /etc/nginx/sites-enabled/ssl/$2.*.conf 2>/dev/null
     rm /etc/nginx/sites-available/$2.conf
     rm -fr /usr/share/nginx/html/$2/
     rm ~/$2
@@ -360,14 +383,14 @@ elif [ "$1" = "ssl" ]; then
             echo "certificate must exist first"
             exit 1
         else 
-            func_ssl $domain > /etc/nginx/sites-available/ssl/$domain.ssl.conf 
-            func_redirect_conf $domain > /etc/nginx/sites-available/ssl/$domain.redirect.conf 
+            func_redirect_conf $domain > /etc/nginx/sites-available/$domain.conf 
+            func_ssl $domain >> /etc/nginx/sites-available/$domain.conf 
             echo "ssl vhost installed";
             service nginx reload
         fi
     elif [ "$2" = "disable" ]; then
         domain=$3
-        rm /etc/nginx/sites-available/ssl/$domain.*.conf 
+        func_nginx_conf $domain > /etc/nginx/sites-available/$domain.conf 
         service nginx reload
         echo "removed ssl vhost for $domain"
     fi
@@ -375,7 +398,7 @@ else
     # usage
     cat <<done
 usage:
-    sudo vhost.sh [create|destroy|enable|disable] <domain>
+    sudo vhost.sh [create|recreate|destroy|enable|disable] <domain>
     sudo vhost.sh ssl [enable|disable] <domain>
     sudo vhost.sh list
     sudo vhost.sh getcert <domain> <email> [live]
