@@ -1,0 +1,32 @@
+# Automatically created by vhost.sh script
+# This file will be overwritten every time this script runs!!
+server {
+    listen 80;
+    # ipv6only causes major major restart issues
+    listen [::]:80; #  ipv6only=on;
+    server_name domain.com;
+
+    gzip on;
+    gzip_types      text/plain text/javascript application/x-javascript application/xml application/javascript text/css;
+
+    root   /usr/share/nginx/html/domain.com/;
+    include acme_challenge.conf;
+
+    index index.php index.html;
+    location / {
+        try_files $uri $uri/ /index.php?$args;
+    }
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico)(\?ver=[0-9.]+)?$ {
+        expires 7d;
+    }
+
+    location ~ \.php$ {
+        fastcgi_pass   unix:/var/run/php/php7.0-fpm.sock;
+        fastcgi_index  index.php;
+        fastcgi_param  SCRIPT_FILENAME  $document_root$fastcgi_script_name;
+        include        fastcgi_params;
+    }
+}
+
+
+

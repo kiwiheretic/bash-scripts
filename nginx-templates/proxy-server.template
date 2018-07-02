@@ -1,0 +1,39 @@
+server {
+  listen 80;
+  listen [::]:80;
+
+  server_name domain.com www.comain.com;
+
+  error_log /var/log/nginx/domain.com.error.log;
+  access_log /var/log/nginx/domain.com.access.log combined;
+
+  include acme_challenge.conf;
+
+  #location / {
+  #    proxy_pass https://2015-1-7.gdm-retail-systems.yourwebisonline.com/;
+  #}
+  return 302 https://$host$request_uri;
+}
+
+server {
+  listen       443 ssl;
+  listen       [::]:443 ssl; # ipv6only=on;
+ 
+  ssl_certificate /etc/certificates/domain.com/domain.com.crt;
+  ssl_certificate_key /etc/certificates/domain.com/domain.com.pem;
+
+  gzip on;
+  gzip_types      text/plain text/javascript application/x-javascript application/xml application/javascript text/css;
+
+  include ssl.conf;
+
+  error_log /var/log/nginx/domain.com.error.log;
+  access_log /var/log/nginx/domain.com.access.log combined;
+
+
+  server_name domain.com;
+
+  location / {
+      proxy_pass https://2015-1-7.gdm-retail-systems.yourwebisonline.com/;
+  }
+}
