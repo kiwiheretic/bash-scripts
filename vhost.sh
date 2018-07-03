@@ -6,7 +6,9 @@ shopt -s nullglob # enable
 # Get the path of this script
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-TEMPLATEDIR="/home/splat/bash-scripts/nginx-templates"
+if [ -z "$TEMPLATEDIR" ]; then
+    TEMPLATEDIR="/opt/vhost/nginx-templates"
+fi
 
 if [ "$1 $2" = "templates list" ]; then
     echo -e "Available Templates\n"

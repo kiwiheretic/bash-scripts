@@ -1,0 +1,32 @@
+ server {
+    listen       80;
+    listen       [::]:80;
+    server_name  domain.com;
+
+    gzip on;
+    gzip_types      text/plain text/javascript application/x-javascript application/xml application/javascript text/css;
+    #autoindex on;
+    rewrite_log on;
+    root   /usr/share/phpmyadmin/;
+    index index.php index.html splats-test-page.html;
+    location / {
+        try_files $uri $uri/ /index.php?$args;
+      index index.php;
+
+      location ~ ^/(sql|setup)/ {
+        deny all;
+      }
+
+     }
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico)(\?ver=[0-9.]+)?$ {
+        expires 7d;
+    }
+
+    location ~ \.php$ {
+        fastcgi_pass   unix:/var/run/php/php7.0-fpm.sock;
+        fastcgi_index  index.php;
+        fastcgi_param  SCRIPT_FILENAME  $document_root$fastcgi_script_name;
+        include        fastcgi_params;
+    }
+}
+        
