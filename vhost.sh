@@ -95,4 +95,34 @@ elif [ "$1" = "enable" ]; then
 
     echo "symlink for vhost $domain created"
     echo "remember to reload nginx with \"sudo service nginx reload\""
+elif [ "$1" = "set" ]; then
+    if [ -z "$2" ]; then
+        echo "No key supplied"
+        exit 1
+    fi
+    if [ -z "$3" ]; then
+        echo "No value supplied"
+        exit 1
+    fi
+	KEY=$2
+	VALUE=$3
+	currval=$( sqlite3 $VHOST_DATA_DIR/data.db \
+		"select value from users where name='$USER' and key='$2'" )
+	if [ -z "$currval" ]; then
+		sqlite3 $VHOST_DATA_DIR/data.db \
+			"insert into users (name, key, value) values ('$USER', '$KEY', '$VALUE')"
+	else
+		sqlite3 $VHOST_DATA_DIR/data.db \
+			"update users set value = '$VALUE' where name ='$USER' and key = '$KEY' "
+
+	fi
+elif [ "$1" = "show" ]; then
+    if [ -z "$2" ]; then
+		sqlite3 $VHOST_DATA_DIR/data.db \
+		"select key, value from users where name='$USER'"
+        exit 1
+    fi
+	KEY=$2
+	sqlite3 $VHOST_DATA_DIR/data.db \
+		"select value from users where name='$USER' and key = '$KEY' "
 fi

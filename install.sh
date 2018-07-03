@@ -37,7 +37,8 @@ if [ ! -f $VHOST_DATA_DIR/data.db ]; then
 		CREATE TABLE users ( 
 			id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, 
 			name TEXT NOT NULL UNIQUE ON CONFLICT ROLLBACK, 
-			email TEXT NOT NULL);
+			key TEXT NOT NULL,
+			value TEXT);
 EOD
 
 fi
