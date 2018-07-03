@@ -6,13 +6,13 @@ shopt -s nullglob # enable
 # Get the path of this script
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-if [ -z "$TEMPLATEDIR" ]; then
-    TEMPLATEDIR="/opt/vhost/nginx-templates"
+if [ -z "$VHOST_DATA_DIR" ]; then
+    VHOST_DATA_DIR="/opt/vhost/"
 fi
 
 if [ "$1 $2" = "templates list" ]; then
     echo -e "Available Templates\n"
-    files=( $TEMPLATEDIR/*.template )
+    files=( $VHOST_DATA_DIR/nginx-templates/*.template )
     for f in "${files[@]}"
     do
         # Remove the pathname
@@ -31,7 +31,7 @@ elif [ "$1" = "create" ]; then
         echo "please supply a domain name"
         exit 1
     fi
-    if [ ! -f  "$TEMPLATEDIR/$2.template" ]; then
+    if [ ! -f  "$VHOST_DATA_DIR/nginx-templates/$2.template" ]; then
         echo "No such template $2"
         exit 1
     fi
@@ -39,7 +39,7 @@ elif [ "$1" = "create" ]; then
         echo "vhost for $3 already exists"
         exit 1
     fi
-    cat "$TEMPLATEDIR/$2.template" | sed -e "s/domain\.com/$3/g" > "/etc/nginx/sites-available/$3.conf"
+    cat "$VHOST_DATA_DIR/nginx-templates/$2.template" | sed -e "s/domain\.com/$3/g" > "/etc/nginx/sites-available/$3.conf"
     if [ ! -d "/usr/share/nginx/html/$3/" ]; then
         mkdir  "/usr/share/nginx/html/$3/"
     fi
