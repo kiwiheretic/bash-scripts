@@ -9,10 +9,12 @@ fi
 # Add vhost group if not present
 grep -q vhost /etc/group
 if [ "$?" -ne 0 ]; then
-    echo groupadd vhost
+    groupadd vhost
 fi
 
 cp 50-vhost /etc/sudoers.d/
+cp vhost.sh /usr/local/bin
+cp nginx-templates/*.template $VHOST_DATA_DIR/nginx-templates
 
 # Get the path of this script
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
