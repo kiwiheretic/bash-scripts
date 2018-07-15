@@ -1,3 +1,4 @@
 
 # Allow group members to sudo run these commands
 %vhost ALL = NOPASSWD: /usr/sbin/service nginx reload
+%vhost ALL = NOPASSWD: /usr/bin/certbot
