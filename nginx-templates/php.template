@@ -12,6 +12,9 @@ server {
     root   /usr/share/nginx/html/domain.com/;
     include acme_challenge.conf;
 
+    error_log /var/log/nginx/domain.com.error.log;
+    access_log /var/log/nginx/domain.com.access.log combined;
+
     index index.php index.html;
     location / {
         try_files $uri $uri/ /index.php?$args;

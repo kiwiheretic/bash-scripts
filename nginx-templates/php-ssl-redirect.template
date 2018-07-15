@@ -21,6 +21,9 @@ server {
     gzip on;
     gzip_types      text/plain text/javascript application/x-javascript application/xml application/javascript text/css;
 
+    error_log /var/log/nginx/domain.com.error.log;
+    access_log /var/log/nginx/domain.com.access.log combined;
+
     rewrite_log on;
     root   /usr/share/nginx/html/domain.com/;
     include ssl.conf;
