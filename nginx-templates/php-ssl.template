@@ -35,7 +35,7 @@ server {
 server {
     listen       443 ssl;
     listen       [::]:443 ssl; # ipv6only=on;
-    server_name  biblewp.com;
+    server_name  domain.com;
     ssl_certificate /etc/letsencrypt/live/domain.com/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/domain.com/privkey.pem;
 

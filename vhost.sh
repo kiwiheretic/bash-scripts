@@ -35,16 +35,12 @@ elif [ "$1" = "create" ]; then
         echo "No such template $2"
         exit 1
     fi
-    if [ -f  "/etc/nginx/sites-available/$3.conf" ]; then
-        echo "vhost for $3 already exists"
-        exit 1
-    fi
     cat "$VHOST_DATA_DIR/nginx-templates/$2.template" | sed -e "s/domain\.com/$3/g" > "/etc/nginx/sites-available/$3.conf"
     if [ ! -d "/usr/share/nginx/html/$3/" ]; then
         mkdir  "/usr/share/nginx/html/$3/"
     fi
 	ln -s "/usr/share/nginx/html/$3/"  "$HOME/$3"
-	ln -s "/etc/nginx/sites-available/$3.conf"  "/etc/nginx/sites-enabled/$3.conf"
+	ln -s "/etc/nginx/sites-available/$3.conf"  "/etc/nginx/sites-enabled/$3.conf" 
     echo "vhost $domain created and enabled"
     echo "remember to reload nginx with \"sudo service nginx reload\""
 elif [ "$1" = "destroy" ]; then
@@ -125,4 +121,21 @@ elif [ "$1" = "show" ]; then
 	KEY=$2
 	sqlite3 $VHOST_DATA_DIR/data.db \
 		"select value from users where name='$USER' and key = '$KEY' "
+elif [ "$1" = "getcert" ]; then
+    email=$(sqlite3 $VHOST_DATA_DIR/data.db \
+            "select value from users where name='$USER' and key = 'email' " )
+    if [ -z "$email" ]; then
+        echo "No email set - set with \" vhost.sh set email <email>\" "
+        exit 1
+    fi
+    # we allow multiple domains to be added to certificate
+    domains=""
+    for i in "${@:2}"
+    do
+        domains="$domains -d $i"
+    done
+    sudo certbot certonly --webroot -w /var/www/letsencrypt $domains --agree-tos -m "$email"
+elif [ "$1" = "revokecert" ]; then
+    domain=$2
+    sudo certbot revoke  --cert-path /etc/letsencrypt/live/$domain/fullchain.pem --delete-after-revoke
 fi

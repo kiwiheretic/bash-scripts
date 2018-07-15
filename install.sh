@@ -44,3 +44,8 @@ if [ ! -f $VHOST_DATA_DIR/data.db ]; then
 EOD
 
 fi
+
+chgrp vhost "$VHOST_DATA_DIR"
+chgrp vhost "$VHOST_DATA_DIR/data.db"
+chmod 770 "$VHOST_DATA_DIR"
+chmod 664 "$VHOST_DATA_DIR/data.db"
