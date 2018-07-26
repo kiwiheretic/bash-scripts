@@ -31,17 +31,18 @@ elif [ "$1" = "create" ]; then
         echo "please supply a domain name"
         exit 1
     fi
+    domains="${@:3}"
     if [ ! -f  "$VHOST_DATA_DIR/nginx-templates/$2.template" ]; then
         echo "No such template $2"
         exit 1
     fi
-    cat "$VHOST_DATA_DIR/nginx-templates/$2.template" | sed -e "s/domain\.com/$3/g" > "/etc/nginx/sites-available/$3.conf"
+    cat "$VHOST_DATA_DIR/nginx-templates/$2.template" | sed -e "s/domain\.com/$domains/g" > "/etc/nginx/sites-available/$3.conf"
     if [ ! -d "/usr/share/nginx/html/$3/" ]; then
         mkdir  "/usr/share/nginx/html/$3/"
     fi
 	ln -s "/usr/share/nginx/html/$3/"  "$HOME/$3"
 	ln -s "/etc/nginx/sites-available/$3.conf"  "/etc/nginx/sites-enabled/$3.conf" 
-    echo "vhost $domain created and enabled"
+    echo "vhost $domains created and enabled"
     echo "remember to reload nginx with \"sudo service nginx reload\""
 elif [ "$1" = "destroy" ]; then
     if [ -z "$2" ]; then
