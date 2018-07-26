@@ -4,7 +4,7 @@ server {
     listen 80;
     # ipv6only causes major major restart issues
     listen [::]:80; #  ipv6only=on;
-    server_name domain.com;
+    server_name domains.com;
     ssl_certificate /etc/letsencrypt/live/domain.com/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/domain.com/privkey.pem;
     return 302 https://domain.com$request_uri;
@@ -14,7 +14,7 @@ server {
 server {
     listen       443 ssl;
     listen       [::]:443 ssl; # ipv6only=on;
-    server_name  domain.com;
+    server_name  domains.com;
     ssl_certificate /etc/letsencrypt/live/domain.com/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/domain.com/privkey.pem;
 

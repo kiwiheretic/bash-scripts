@@ -4,7 +4,7 @@ server {
     listen 80;
     # ipv6only causes major major restart issues
     listen [::]:80; #  ipv6only=on;
-    server_name domain.com;
+    server_name domains.com;
 
     gzip on;
     gzip_types      text/plain text/javascript application/x-javascript application/xml application/javascript text/css;

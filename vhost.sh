@@ -36,7 +36,7 @@ elif [ "$1" = "create" ]; then
         echo "No such template $2"
         exit 1
     fi
-    cat "$VHOST_DATA_DIR/nginx-templates/$2.template" | sed -e "s/domain\.com/$domains/g" > "/etc/nginx/sites-available/$3.conf"
+    cat "$VHOST_DATA_DIR/nginx-templates/$2.template" | sed -e "s/domains\.com/$domains/g" | sed -e "s/domain\.com/$3/g" > "/etc/nginx/sites-available/$3.conf"
     if [ ! -d "/usr/share/nginx/html/$3/" ]; then
         mkdir  "/usr/share/nginx/html/$3/"
     fi
