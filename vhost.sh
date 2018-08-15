@@ -61,6 +61,79 @@ elif [ "$1" = "destroy" ]; then
 
     echo "vhost $domain destroyed"
     echo "remember to reload nginx with \"sudo service nginx reload\""
+elif [ "$1" = "mv" ]; then
+    srcdomain=$2
+    targetdomain=$3
+    if [ -z "$srcdomain" ]; then
+        echo "please supply a source domain name"
+        exit 1
+    fi
+    if [ -z "$targetdomain" ]; then
+        echo "please supply a target domain name"
+        exit 1
+    fi
+    ## Find all symlinks that $srcdomain points to recursively until we find the
+    ## actual folder, these are added to array arr
+    arr=()
+    tmp=$( readlink "$HOME/$srcdomain" )
+    webfolder=${tmp%/}  # strip trailing slash
+    arr+=($webfolder) # push web folder link to end of array
+    while [ -n "$(readlink $webfolder)" ] ; do
+        tmp=$( readlink "$webfolder" ) # traverse the symlink
+        webfolder=${tmp%/} # strip trailing slash
+        arr+=($webfolder) #  push web folder link to end of array
+    done
+    echo "----"
+    # we are using a reverse index traversing the array backwards
+    # so that we can adjust every symlink to match the new domain
+    idx=$((${#arr[@]}-1)) ## Subtract 1 from idx
+    lastidx=$idx  # remember idx to end of array
+    t="${arr[$idx]}" # get tail element from array
+    tgt=$(echo "$t" | sed -e "s:$srcdomain:$targetdomain:") # adjust symlink path to new domain
+    while [ $idx -ge 0 ] ; do
+        if [ $idx -eq $lastidx ] ; then  # If last symlink
+            echo "mv \"$t\" \"$tgt\""  # just rename it
+        else # otherwise remove it and recreate it
+            echo "rm \"$t\""
+            last_target=$( echo ${arr[$(($idx+1))]} | sed -e "s|$srcdomain|$targetdomain|" )
+            echo "ln -s \"$tgt\" \"$last_target\" )"
+        fi
+        # move to previous element in array
+        idx=$(($idx-1))  # decrement index
+        t="${arr[$idx]}" # get symlink element at that index
+        tgt=$(echo "$t" | sed -e "s:$srcdomain:$targetdomain:")  # replace domain for that symlink
+    done
+    if [ ! -L "$HOME/$srcdomain" ]; then
+        echo "vhost symlink for domain $srcdomain does not exist in home folder"
+    else
+        echo "renaming home symlink $1 to $srcdomain"
+        echo "rm $HOME/$srcdomain"
+        target=$( echo ${arr[0]} | sed -e "s|$srcdomain|$targetdomain|" )
+        echo "ln -s $target $HOME/$srcdomain"
+    fi
+    echo "++++"
+	# Find all current domains listed in the config file
+    # and add the new $targetdomain and remove $srcdomain
+    x=$( cat "/etc/nginx/sites-enabled/$srcdomain.conf" | grep -e "server_name" | head -n1 | sed -e 's/server_name\|;//g' )
+	newlist=""
+	for e in ${x}; do
+		if [ $e != $srcdomain ]; then
+			newlist="$newlist $e"
+		fi
+	done
+    # add $targetdomain into list if not already present
+	if [[ $newlist != *"$targetdomain"* ]]; then
+	  newlist="$targetdomain $newlist"
+	fi
+	echo $newlist
+    cat /etc/nginx/sites-available/$srcdomain.conf | sed -e "/server_name/c\    server_name  $newlist ;" > /tmp/nginx.config
+    cat /tmp/nginx.config | sed -e "/error_log/s|error_log \(.*\)|error_log /var/log/nginx/$targetdomain.error.log|" > /tmp/nginx.config.2
+    cat /tmp/nginx.config.2 | sed -e "/access_log/s|access_log \(.*\)|access_log /var/log/nginx/$targetdomain.error.log combined|" > /tmp/nginx.config.3
+    #cat /tmp/nginx.config.3 | sed -e "/ssl_certificate /s|ssl_certificate (.*)|ssl_certificate /etc/letsencrypt/live/$targetdomain/fullchain.pem|" > /tmp/nginx.config.4
+    if [ -L /etc/nginx/sites-enabled/$srcdomain.conf ] ; then
+        echo "rm \"/etc/nginx/sites-enabled/$srcdomain.conf\" "
+        echo "ln -s \"/etc/nginx/sites-available/$targetdomain.conf\" \"/etc/nginx/sites-enabled/$targetdomain.conf\""
+    fi
 elif [ "$1" = "disable" ]; then
     if [ -z "$2" ]; then
         echo "No domain supplied"
