@@ -93,10 +93,13 @@ elif [ "$1" = "mv" ]; then
     while [ $idx -ge 0 ] ; do
         if [ $idx -eq $lastidx ] ; then  # If last symlink
             echo "mv \"$t\" \"$tgt\""  # just rename it
+            mv \"$t\" \"$tgt\"  # just rename it
         else # otherwise remove it and recreate it
             echo "rm \"$t\""
+            rm \"$t\"
             last_target=$( echo ${arr[$(($idx+1))]} | sed -e "s|$srcdomain|$targetdomain|" )
-            echo "ln -s \"$tgt\" \"$last_target\" )"
+            echo "ln -s \"$tgt\" \"$last_target\" "
+            ln -s \"$tgt\" \"$last_target\" 
         fi
         # move to previous element in array
         idx=$(($idx-1))  # decrement index
@@ -108,8 +111,10 @@ elif [ "$1" = "mv" ]; then
     else
         echo "renaming home symlink $1 to $srcdomain"
         echo "rm $HOME/$srcdomain"
+        rm "$HOME/$srcdomain"
         target=$( echo ${arr[0]} | sed -e "s|$srcdomain|$targetdomain|" )
         echo "ln -s $target $HOME/$srcdomain"
+        ln -s "$target" "$HOME/$srcdomain"
     fi
     echo "++++"
 	# Find all current domains listed in the config file
@@ -126,13 +131,18 @@ elif [ "$1" = "mv" ]; then
 	  newlist="$targetdomain $newlist"
 	fi
 	echo $newlist
-    cat /etc/nginx/sites-available/$srcdomain.conf | sed -e "/server_name/c\    server_name  $newlist ;" > /tmp/nginx.config
-    cat /tmp/nginx.config | sed -e "/error_log/s|error_log \(.*\)|error_log /var/log/nginx/$targetdomain.error.log|" > /tmp/nginx.config.2
+    cat /etc/nginx/sites-available/$srcdomain.conf | sed -e "/server_name/c\    server_name  $newlist ;" > /tmp/nginx.config.1
+    cat /tmp/nginx.config.1 | sed -e "/error_log/s|error_log \(.*\)|error_log /var/log/nginx/$targetdomain.error.log|" > /tmp/nginx.config.2
     cat /tmp/nginx.config.2 | sed -e "/access_log/s|access_log \(.*\)|access_log /var/log/nginx/$targetdomain.error.log combined|" > /tmp/nginx.config.3
+    cp /tmp/nginx.config.3 /etc/nginx/sites-available/$targetdomain.conf
+    rm /tmp/nginx.config.*
+    rm /etc/nginx/sites-available/$srcdomain.conf
     #cat /tmp/nginx.config.3 | sed -e "/ssl_certificate /s|ssl_certificate (.*)|ssl_certificate /etc/letsencrypt/live/$targetdomain/fullchain.pem|" > /tmp/nginx.config.4
     if [ -L /etc/nginx/sites-enabled/$srcdomain.conf ] ; then
         echo "rm \"/etc/nginx/sites-enabled/$srcdomain.conf\" "
+        rm "/etc/nginx/sites-enabled/$srcdomain.conf"
         echo "ln -s \"/etc/nginx/sites-available/$targetdomain.conf\" \"/etc/nginx/sites-enabled/$targetdomain.conf\""
+        ln -s "/etc/nginx/sites-available/$targetdomain.conf" "/etc/nginx/sites-enabled/$targetdomain.conf"
     fi
 elif [ "$1" = "disable" ]; then
     if [ -z "$2" ]; then
