@@ -132,8 +132,8 @@ elif [ "$1" = "mv" ]; then
 	fi
 	echo $newlist
     cat /etc/nginx/sites-available/$srcdomain.conf | sed -e "/server_name/c\    server_name  $newlist ;" > /tmp/nginx.config.1
-    cat /tmp/nginx.config.1 | sed -e "/error_log/s|error_log \(.*\)|error_log /var/log/nginx/$targetdomain.error.log|" > /tmp/nginx.config.2
-    cat /tmp/nginx.config.2 | sed -e "/access_log/s|access_log \(.*\)|access_log /var/log/nginx/$targetdomain.error.log combined|" > /tmp/nginx.config.3
+    cat /tmp/nginx.config.1 | sed -e "/error_log/s|error_log \(.*\)|error_log /var/log/nginx/$targetdomain.error.log;|" > /tmp/nginx.config.2
+    cat /tmp/nginx.config.2 | sed -e "/access_log/s|access_log \(.*\)|access_log /var/log/nginx/$targetdomain.error.log combined;|" > /tmp/nginx.config.3
     cp /tmp/nginx.config.3 /etc/nginx/sites-available/$targetdomain.conf
     rm /tmp/nginx.config.*
     rm /etc/nginx/sites-available/$srcdomain.conf
