@@ -10,9 +10,9 @@ $ sudo ./install.sh
 
 Then add all vhost users to the vhost group
 
-$ sudo usermod -a -G vhost &lt;username&gt;
+$ sudo usermod -a -G vhost <username>
 
-replacing &lt;username&gt; with your username
+replacing <username> with your username
 
 
 
@@ -28,31 +28,31 @@ $ vhost.sh templates list
 
 To create a virtual host:
 
-$ vhost.sh create &lt;template-name&gt; &lt;domain&gt;
+$ vhost.sh create <template-name> <domain>
 
 To remove a virtual host:
-$ vhost.sh destroy &lt;domain&gt;
+$ vhost.sh destroy <domain>
 Warning:  This removes all files from your webserver permanently!
 
 If you just want to temporarily disable a virtual host:  
-$ vhost.sh disable &lt;domain&gt;
+$ vhost.sh disable <domain>
 
 To reenable a previously disabled virtual host:  
-$ vhost.sh enable &lt;domain&gt;
+$ vhost.sh enable <domain>
 
 ### SSL
 To create a test SSL certificate:  
-$ getcerttest &lt;domain&gt;
+$ getcerttest <domain>
 
 To create a live SSL certificate:  
-$ getcertlive &lt;domain&gt;
+$ getcertlive <domain>
 
 To add SSL certificate to your site  
 
-$ vhost.sh create php-ssl  &lt;domain&gt;  
+$ vhost.sh create php-ssl  <domain>  
 
 To remove SSL certificate to your site (but doesn't destroy certificate)  
 
-$ vhost.sh ssl create php  &lt;domain&gt;  
+$ vhost.sh ssl create php  <domain>  
 Certificates are obtained from letsencrypt.org.  
 
