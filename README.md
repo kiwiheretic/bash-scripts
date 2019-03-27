@@ -6,14 +6,15 @@ To install:
 $ sudo apt-get install letsencrypt
 $ sudo apt-get install git  
 $ git clone https://github.com/kiwiheretic/bash-scripts.git ~/bash_scripts
-$ sudo cp -v ~/bash_scripts/*.conf  /etc/nginx
-$ sudo mkdir /var/www/letsencrypt
-$ sudo mkdir /etc/nginx/sites-available/ssl
+$ sudo ./install.sh
 
-$ ln -s ~/bash_scripts/vhost.sh ~/vhost.sh
-$ ln -s ~/bash_scripts/unpacktar.sh ~/unpacktar.sh
-$ echo "source ~/bash_scripts/cert_fns.sh" >> ~/.bashrc
-```
+Then add all vhost users to the vhost group
+
+$ sudo usermod -a -G vhost &lt;username&gt;
+
+replacing &lt;username&gt; with your username
+
+
 
 Then logout and login again.
 
