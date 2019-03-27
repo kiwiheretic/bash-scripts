@@ -18,11 +18,17 @@ replacing &lt;username&gt; with your username
 
 Then logout and login again.
 
+### webserver templates
+
+To see what host templates are installed
+
+$ vhost.sh templates list
+
 ### Virtual Hosts
 
 To create a virtual host:
 
-$ vhost.sh create &lt;domain&gt;
+$ vhost.sh create &lt;template-name&gt; &lt;domain&gt;
 
 To remove a virtual host:
 $ vhost.sh destroy &lt;domain&gt;
@@ -43,15 +49,10 @@ $ getcertlive &lt;domain&gt;
 
 To add SSL certificate to your site  
 
-$ vhost.sh ssl enable &lt;domain&gt;  
+$ vhost.sh create php-ssl  &lt;domain&gt;  
 
 To remove SSL certificate to your site (but doesn't destroy certificate)  
 
-$ vhost.sh ssl disable &lt;domain&gt;  
+$ vhost.sh ssl create php  &lt;domain&gt;  
 Certificates are obtained from letsencrypt.org.  
 
-Only a small number (around 5) of live certificates can be obtained a week.  So best to test with test certificates until ready.  Test certificates will not
-show as valid inside a browser.  To test the test certificate and indeed all certificates see below.
-
-To test a domains certificates are installed:  
-$ testcert &lt;domain&gt;

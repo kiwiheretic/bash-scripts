@@ -29,6 +29,8 @@ setfacl -m d:g:vhost:rwx /etc/nginx/sites-available/
 setfacl -m g:vhost:rwx /etc/nginx/sites-enabled/
 setfacl -m d:g:vhost:rwx /etc/nginx/sites-enabled/
 
+setfacl -m g:vhost:rwx /var/www/letsencrypt
+
 if [ ! -d "$VHOST_DATA_DIR" ]; then
     mkdir "$VHOST_DATA_DIR"
     mkdir $VHOST_DATA_DIR/nginx-templates &2> /dev/null
